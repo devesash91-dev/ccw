@@ -110,10 +110,8 @@ async function example5() {
   const tracer = new BlockchainTracer({
     network: 'ethereum',
     maxDepth: 10,
-    minAmount: 1.0,  // Only trace transactions > 1.0 ETH
-    apiKeys: {
-      etherscan: 'YOUR_API_KEY_HERE'
-    }
+    maxTransactionsPerAddress: 20,  // Trace more transactions per address
+    maxTransactionsForPaths: 10     // Search more transactions for paths
   });
 
   const result = await tracer.traceFromAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb', {
@@ -162,12 +160,12 @@ node ../src/cli.js path 0xfrom... 0xto... --output paths.json
 
 ## Advanced Examples
 
-### Example 6: Analyze Multiple Addresses
+### Example 6: Analyze Transaction Flow
 
 ```javascript
 import BlockchainTracer from '../src/tracer.js';
 
-async function analyzeMultiple() {
+async function analyzeTransactionFlow() {
   const tracer = new BlockchainTracer({ network: 'ethereum' });
   
   const addresses = [
@@ -178,34 +176,17 @@ async function analyzeMultiple() {
   
   for (const address of addresses) {
     console.log(`\nAnalyzing ${address}...`);
-    const flow = await tracer._getAddressFlow(address, 2);
-    console.log(`- Incoming: ${flow.totalIn}`);
-    console.log(`- Outgoing: ${flow.totalOut}`);
-    console.log(`- Net Flow: ${flow.netFlow}`);
-    console.log(`- Transactions: ${flow.transactionCount}`);
+    
+    // Trace the address to get flow information
+    const result = await tracer.traceFromAddress(address, { depth: 1 });
+    
+    console.log(`- Nodes found: ${result.summary.nodeCount}`);
+    console.log(`- Transactions: ${result.summary.edgeCount}`);
+    console.log(`- Total value: ${result.summary.totalValue}`);
   }
 }
 
-analyzeMultiple();
-```
-
-### Example 7: Real-time Monitoring (Coming Soon)
-
-```javascript
-// This feature is planned for future releases
-import BlockchainTracer from '../src/tracer.js';
-
-async function monitorAddress() {
-  const tracer = new BlockchainTracer({ network: 'ethereum' });
-  
-  // Watch for new transactions on an address
-  tracer.watch('0xaddress...', (transaction) => {
-    console.log('New transaction detected!');
-    console.log(`From: ${transaction.from}`);
-    console.log(`To: ${transaction.to}`);
-    console.log(`Value: ${transaction.value}`);
-  });
-}
+analyzeTransactionFlow();
 ```
 
 ## Visualization

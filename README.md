@@ -213,12 +213,10 @@ Configure the tracer with various options:
 
 ```javascript
 const tracer = new BlockchainTracer({
-  network: 'ethereum',      // Blockchain network
-  maxDepth: 5,              // Maximum trace depth
-  minAmount: 0,             // Minimum transaction amount to include
-  apiKeys: {                // API keys for blockchain services
-    etherscan: 'YOUR_KEY'
-  }
+  network: 'ethereum',           // Blockchain network
+  maxDepth: 5,                   // Maximum trace depth
+  maxTransactionsPerAddress: 10, // Max transactions to trace per address
+  maxTransactionsForPaths: 5     // Max transactions when finding paths
 });
 ```
 

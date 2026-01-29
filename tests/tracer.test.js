@@ -11,21 +11,22 @@ test('BlockchainTracer - constructor creates instance with default config', () =
   
   assert.strictEqual(tracer.config.network, 'ethereum');
   assert.strictEqual(tracer.config.maxDepth, 5);
-  assert.strictEqual(tracer.config.minAmount, 0);
+  assert.strictEqual(tracer.config.maxTransactionsPerAddress, 10);
+  assert.strictEqual(tracer.config.maxTransactionsForPaths, 5);
 });
 
 test('BlockchainTracer - constructor accepts custom config', () => {
   const config = {
     network: 'bitcoin',
     maxDepth: 10,
-    minAmount: 1.0
+    maxTransactionsPerAddress: 20
   };
   
   const tracer = new BlockchainTracer(config);
   
   assert.strictEqual(tracer.config.network, 'bitcoin');
   assert.strictEqual(tracer.config.maxDepth, 10);
-  assert.strictEqual(tracer.config.minAmount, 1.0);
+  assert.strictEqual(tracer.config.maxTransactionsPerAddress, 20);
 });
 
 test('BlockchainTracer - traceFromAddress returns graph structure', async () => {

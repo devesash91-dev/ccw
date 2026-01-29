@@ -3,24 +3,15 @@
  * Similar to Arkham Intelligence Tracer
  */
 
-import axios from 'axios';
-
 class BlockchainTracer {
   constructor(config = {}) {
     this.config = {
       network: config.network || 'ethereum',
-      apiKeys: config.apiKeys || {},
       maxDepth: config.maxDepth || 5,
-      minAmount: config.minAmount || 0,
+      maxTransactionsPerAddress: config.maxTransactionsPerAddress || 10,
+      maxTransactionsForPaths: config.maxTransactionsForPaths || 5,
       ...config
     };
-    
-    this.endpoints = {
-      ethereum: 'https://api.etherscan.io/api',
-      bitcoin: 'https://blockchain.info'
-    };
-    
-    this.transactionGraph = new Map();
   }
 
   /**
@@ -30,6 +21,8 @@ class BlockchainTracer {
    * @returns {Promise<Object>} - Transaction graph
    */
   async traceFromAddress(address, options = {}) {
+    this._validateAddress(address);
+    
     const depth = options.depth || this.config.maxDepth;
     const direction = options.direction || 'both'; // 'in', 'out', or 'both'
     
@@ -59,37 +52,34 @@ class BlockchainTracer {
    * @returns {Promise<Object>} - Transaction details
    */
   async traceTransaction(txHash) {
+    this._validateTransactionHash(txHash);
+    
     console.log(`Tracing transaction: ${txHash}`);
     console.log(`Network: ${this.config.network}`);
     
-    try {
-      const txDetails = await this._fetchTransactionDetails(txHash);
-      
-      const trace = {
-        hash: txHash,
-        from: txDetails.from,
-        to: txDetails.to,
-        value: txDetails.value,
-        timestamp: txDetails.timestamp,
-        status: txDetails.status,
-        network: this.config.network,
-        blockNumber: txDetails.blockNumber,
-        gasUsed: txDetails.gasUsed,
-        fee: txDetails.fee
-      };
-      
-      // Trace both sender and receiver
-      const graph = {
-        transaction: trace,
-        fromAddressFlow: await this._getAddressFlow(txDetails.from, 2),
-        toAddressFlow: await this._getAddressFlow(txDetails.to, 2)
-      };
-      
-      return graph;
-    } catch (error) {
-      console.error(`Error tracing transaction: ${error.message}`);
-      throw error;
-    }
+    const txDetails = await this._fetchTransactionDetails(txHash);
+    
+    const trace = {
+      hash: txHash,
+      from: txDetails.from,
+      to: txDetails.to,
+      value: txDetails.value,
+      timestamp: txDetails.timestamp,
+      status: txDetails.status,
+      network: this.config.network,
+      blockNumber: txDetails.blockNumber,
+      gasUsed: txDetails.gasUsed,
+      fee: txDetails.fee
+    };
+    
+    // Trace both sender and receiver
+    const graph = {
+      transaction: trace,
+      fromAddressFlow: await this._getAddressFlow(txDetails.from, 2),
+      toAddressFlow: await this._getAddressFlow(txDetails.to, 2)
+    };
+    
+    return graph;
   }
 
   /**
@@ -99,6 +89,9 @@ class BlockchainTracer {
    * @returns {Promise<Array>} - Paths between addresses
    */
   async tracePath(fromAddress, toAddress) {
+    this._validateAddress(fromAddress);
+    this._validateAddress(toAddress);
+    
     console.log(`Finding paths from ${fromAddress} to ${toAddress}`);
     
     const paths = [];
@@ -175,7 +168,7 @@ class BlockchainTracer {
     try {
       const transactions = await this._fetchAddressTransactions(address, 1);
       
-      for (const tx of transactions.slice(0, 10)) { // Limit to 10 transactions per address
+      for (const tx of transactions.slice(0, this.config.maxTransactionsPerAddress)) {
         if (direction === 'out' || direction === 'both') {
           if (tx.from && tx.from.toLowerCase() === address.toLowerCase() && tx.to) {
             graph.edges.push({
@@ -231,7 +224,7 @@ class BlockchainTracer {
     try {
       const transactions = await this._fetchAddressTransactions(current, 1);
       
-      for (const tx of transactions.slice(0, 5)) {
+      for (const tx of transactions.slice(0, this.config.maxTransactionsForPaths)) {
         if (tx.from && tx.from.toLowerCase() === current.toLowerCase() && tx.to) {
           const next = tx.to;
           if (!visited.has(next.toLowerCase())) {
@@ -275,9 +268,9 @@ class BlockchainTracer {
     
     for (let i = 0; i < Math.min(limit, 5); i++) {
       transactions.push({
-        hash: '0x' + Math.random().toString(16).substr(2, 64),
+        hash: '0x' + Math.random().toString(16).slice(2, 66),
         from: address,
-        to: '0x' + Math.random().toString(16).substr(2, 40),
+        to: '0x' + Math.random().toString(16).slice(2, 42),
         value: (Math.random() * 10).toFixed(4),
         timestamp: Date.now() - (i * 3600000),
         blockNumber: 12345678 - i
@@ -358,6 +351,41 @@ class BlockchainTracer {
     });
     
     return csv;
+  }
+
+  /**
+   * Validate Ethereum address format
+   */
+  _validateAddress(address) {
+    if (!address || typeof address !== 'string') {
+      throw new Error('Address must be a non-empty string');
+    }
+    
+    // Basic validation for Ethereum addresses (0x followed by 40 hex characters)
+    // This is a simplified check - real implementation would be more thorough
+    if (this.config.network === 'ethereum') {
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address) && address.length > 5) {
+        // Allow partial addresses for demo purposes
+        console.warn(`Warning: Address ${address} may not be a valid Ethereum address`);
+      }
+    }
+  }
+
+  /**
+   * Validate transaction hash format
+   */
+  _validateTransactionHash(txHash) {
+    if (!txHash || typeof txHash !== 'string') {
+      throw new Error('Transaction hash must be a non-empty string');
+    }
+    
+    // Basic validation for transaction hashes
+    if (this.config.network === 'ethereum') {
+      if (!/^0x[a-fA-F0-9]{64}$/.test(txHash) && txHash.length > 5) {
+        // Allow partial hashes for demo purposes
+        console.warn(`Warning: Transaction hash ${txHash} may not be a valid Ethereum transaction hash`);
+      }
+    }
   }
 }
 
