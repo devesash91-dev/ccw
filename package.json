@@ -1,0 +1,27 @@
+{
+  "name": "ccw-tracer",
+  "version": "1.0.0",
+  "description": "Blockchain transaction tracer tool - similar to Arkham Intelligence Tracer",
+  "main": "src/index.js",
+  "type": "module",
+  "bin": {
+    "ccw-tracer": "./src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": [
+    "blockchain",
+    "tracer",
+    "crypto",
+    "transaction",
+    "ethereum",
+    "bitcoin"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
